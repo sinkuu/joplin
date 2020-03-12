@@ -133,6 +133,7 @@
     "markdown-it-toc-done-right": "^4.1.0",
     "md5": "^2.2.1",
     "md5-file": "^4.0.0",
+    "meaw": "^4.3.0",
     "memory-cache": "^0.2.0",
     "mermaid": "^8.4.6",
     "moment": "^2.22.2",
