@@ -1,0 +1,32 @@
+diff --git a/node_modules/brace/index.js b/node_modules/brace/index.js
+index 5999cf6..51a32ba 100644
+--- a/node_modules/brace/index.js
++++ b/node_modules/brace/index.js
+@@ -10960,7 +10960,7 @@ EditSession.$uid = 0;
+             } else if((c > 39 && c < 48) || (c > 57 && c < 64)) {
+                 arr.push(PUNCTUATION);
+             }
+-            else if (c >= 0x1100 && isFullWidth(c)) {
++            else if (c >= 0x1100 && this.isFullWidth(c)) {
+                 arr.push(CHAR, CHAR_EXT);
+             } else {
+                 arr.push(CHAR);
+@@ -10981,7 +10981,7 @@ EditSession.$uid = 0;
+             if (c == 9) {
+                 screenColumn += this.getScreenTabSize(screenColumn);
+             }
+-            else if (c >= 0x1100 && isFullWidth(c)) {
++            else if (c >= 0x1100 && this.isFullWidth(c)) {
+                 screenColumn += 2;
+             } else {
+                 screenColumn += 1;
+@@ -11294,8 +11294,7 @@ EditSession.$uid = 0;
+         this.$stopWorker();
+     };
+ 
+-    this.isFullWidth = isFullWidth;
+-    function isFullWidth(c) {
++    this.isFullWidth = function(c) {
+         if (c < 0x1100)
+             return false;
+         return c >= 0x1100 && c <= 0x115F ||

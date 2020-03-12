@@ -41,6 +41,7 @@ const NoteTextViewer = require('./NoteTextViewer.min');
 const NoteRevisionViewer = require('./NoteRevisionViewer.min');
 const TemplateUtils = require('lib/TemplateUtils');
 const markupLanguageUtils = require('lib/markupLanguageUtils');
+const { computeWidth } = require('meaw');
 
 require('brace/mode/markdown');
 // https://ace.c9.io/build/kitchen-sink.html
@@ -1041,6 +1042,10 @@ class NoteTextComponent extends React.Component {
 				}
 
 				indentOrig.call(this);
+			};
+
+			this.editor_.editor.getSession().isFullWidth = (c) => {
+				return computeWidth(String.fromCodePoint(c)) == 2;
 			};
 		}
 	}
