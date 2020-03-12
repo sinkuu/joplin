@@ -1045,7 +1045,7 @@ class NoteTextComponent extends React.Component {
 			};
 
 			this.editor_.editor.getSession().isFullWidth = (c) => {
-				return computeWidth(String.fromCodePoint(c)) == 2;
+				return computeWidth(String.fromCodePoint(c), { 'A': 2 }) == 2;
 			};
 		}
 	}
