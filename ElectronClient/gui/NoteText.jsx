@@ -113,7 +113,6 @@ class NoteTextComponent extends React.Component {
 			bodyHtml: '',
 			lastRenderCssFiles: [],
 			lastRenderPluginAssets: [],
-			lastKeys: [],
 			showLocalSearch: false,
 			localSearch: Object.assign({}, this.localSearchDefaultState),
 		};
@@ -176,13 +175,6 @@ class NoteTextComponent extends React.Component {
 					await shim.fsDriver().remove(filePath);
 				}
 			}
-		};
-
-		this.onEditorKeyDown_ = event => {
-			const lastKeys = this.state.lastKeys.slice();
-			lastKeys.push(event.key);
-			while (lastKeys.length > 2) lastKeys.splice(0, 1);
-			this.setState({ lastKeys: lastKeys });
 		};
 
 		this.onEditorContextMenu_ = () => {
@@ -628,7 +620,6 @@ class NoteTextComponent extends React.Component {
 			lastSavedNote: Object.assign({}, note),
 			webviewReady: webviewReady,
 			folder: parentFolder,
-			lastKeys: [],
 			showRevisions: false,
 		};
 
@@ -952,7 +943,6 @@ class NoteTextComponent extends React.Component {
 		if (this.editor_) {
 			this.editor_.editor.renderer.off('afterRender', this.onAfterEditorRender_);
 			document.querySelector('#note-editor').removeEventListener('paste', this.onEditorPaste_, true);
-			document.querySelector('#note-editor').removeEventListener('keydown', this.onEditorKeyDown_);
 			document.querySelector('#note-editor').removeEventListener('contextmenu', this.onEditorContextMenu_);
 			this.editor_.editor.indent = this.indentOrig;
 		}
@@ -983,7 +973,6 @@ class NoteTextComponent extends React.Component {
 			}
 
 			document.querySelector('#note-editor').addEventListener('paste', this.onEditorPaste_, true);
-			document.querySelector('#note-editor').addEventListener('keydown', this.onEditorKeyDown_);
 			document.querySelector('#note-editor').addEventListener('contextmenu', this.onEditorContextMenu_);
 
 			const lineLeftSpaces = function(line) {
@@ -1000,11 +989,7 @@ class NoteTextComponent extends React.Component {
 
 			// Disable Markdown auto-completion (eg. auto-adding a dash after a line with a dash.
 			// https://github.com/ajaxorg/ace/issues/2754
-			const that = this; // The "this" within the function below refers to something else
 			this.editor_.editor.getSession().getMode().getNextLineIndent = function(state, line) {
-				const ls = that.state.lastKeys;
-				if (ls.length >= 2 && ls[ls.length - 1] === 'Enter' && ls[ls.length - 2] === 'Enter') return this.$getIndent(line);
-
 				const leftSpaces = lineLeftSpaces(line);
 				const lineNoLeftSpaces = line.trimLeft();
 
@@ -1018,6 +1003,16 @@ class NoteTextComponent extends React.Component {
 				return this.$getIndent(line);
 			};
 
+			// Returns tokens of the line if it starts with a 'markup.list' token.
+			const listTokens = (editor, row) => {
+				const tokens = editor.session.getTokens(row);
+				if (tokens.length > 0 && tokens[0].type == 'markup.list') {
+					return tokens;
+				} else {
+					return undefined;
+				}
+			};
+
 			// Markdown list indentation. (https://github.com/laurent22/joplin/pull/2713)
 			// If the current line starts with `markup.list` token,
 			// hitting `Tab` key indents the line instead of inserting tab at cursor.
@@ -1027,9 +1022,9 @@ class NoteTextComponent extends React.Component {
 				const range = this.getSelectionRange();
 				if (range.isEmpty()) {
 					const row = range.start.row;
-					const tokens = this.session.getTokens(row);
+					const tokens = listTokens(this, row);
 
-					if (tokens.length > 0 && tokens[0].type == 'markup.list') {
+					if (tokens) {
 						if (tokens[0].value.search(/\d+\./) != -1) {
 							// Resets numbered list to 1.
 							this.session.replace({ start: { row, column: 0 }, end: { row, column: tokens[0].value.length } },
@@ -1043,6 +1038,33 @@ class NoteTextComponent extends React.Component {
 
 				indentOrig.call(this);
 			};
+
+			// Delete a list markup (e.g. `- `) from an empty list item on hitting Enter.
+			// (https://github.com/laurent22/joplin/pull/2772)
+			this.editor_.editor.commands.addCommand({
+				name: 'enter',
+				bindKey: { win: 'Enter', mac: 'Enter' },
+				exec: function(editor) {
+					const range = editor.getSelectionRange();
+					const tokens = listTokens(editor, range.start.row);
+					if (!range.isEmpty() || !tokens || tokens.length > 1) {
+						editor.insert('\n');
+						return;
+					}
+
+					const row = range.start.row;
+					const line = editor.session.getLine(row);
+
+					editor.session.replace(
+						{
+							start: { row, column: 0 },
+							end: { row, column: line.length },
+						},
+						editor.session.getMode().$getIndent(line),
+					);
+				},
+				readOnly: false,
+			});
 
 			this.editor_.editor.getSession().isFullWidth = (c) => {
 				return computeWidth(String.fromCodePoint(c), { 'A': 2 }) == 2;
