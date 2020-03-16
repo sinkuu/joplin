@@ -1063,13 +1063,19 @@ class NoteTextComponent extends React.Component {
 
 					const row = range.start.row;
 					const line = editor.session.getLine(row);
+					let indent = editor.getSession().getMode().getNextLineIndent(null, line);
+					if (indent.startsWith('\t')) {
+						indent = indent.slice(1);
+					} else {
+						indent = '';
+					}
 
 					editor.session.replace(
 						{
 							start: { row, column: 0 },
 							end: { row, column: line.length },
 						},
-						editor.session.getMode().$getIndent(line),
+						indent,
 					);
 				},
 				readOnly: false,
