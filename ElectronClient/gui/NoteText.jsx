@@ -1012,6 +1012,25 @@ class NoteTextComponent extends React.Component {
 				return tokens;
 			};
 
+			// Finds the list item with indent level `prevIndent`.
+			const findPrevListNum = (editor, row, prevIndent) => {
+				const indentStr = '\t'.repeat(prevIndent);
+				while (row > 0) {
+					row--;
+					const line = editor.session.getLine(row);
+
+					if (!line.startsWith(indentStr)) {
+						break;
+					}
+
+					const num = markdownUtils.olLineNumber(line.slice(prevIndent));
+					if (num) {
+						return num;
+					}
+				}
+				return 0;
+			};
+
 			// Markdown list indentation. (https://github.com/laurent22/joplin/pull/2713)
 			// If the current line starts with `markup.list` token,
 			// hitting `Tab` key indents the line instead of inserting tab at cursor.
@@ -1023,11 +1042,15 @@ class NoteTextComponent extends React.Component {
 					const row = range.start.row;
 					const tokens = listTokens(this, row);
 
-					if (tokens) {
+					if (tokens.length > 0) {
+						// Correct the number of numbered list item.
 						if (tokens[0].value.search(/\d+\./) != -1) {
-							// Resets numbered list to 1.
+							const line = this.session.getLine(row);
+							// Number of `\t`
+							const indent = Array.prototype.findIndex.call(line, c => c !== '\t');
+							const n = findPrevListNum(this, row, indent + 1) + 1;
 							this.session.replace({ start: { row, column: 0 }, end: { row, column: tokens[0].value.length } },
-								tokens[0].value.replace(/\d+\./, '1.'));
+								tokens[0].value.replace(/\d+\./, `${n}.`));
 						}
 
 						this.session.indentRows(row, row, '\t');
@@ -1073,6 +1096,38 @@ class NoteTextComponent extends React.Component {
 					);
 				},
 				readOnly: false,
+			});
+
+			// Correct the number of numbered list item when outdenting.
+			this.editor_.editor.commands.addCommand({
+				name: 'outdent',
+				bindKey: { win: 'Shift+Tab', mac: 'Shift+Tab' },
+				multiSelectAction: 'forEachLine',
+				exec: function(editor) {
+					const range = editor.getSelectionRange();
+					if (range.isEmpty()) {
+						const row = range.start.row;
+
+						const tokens = editor.session.getTokens(row);
+						if (tokens.length && tokens[0].type === 'markup.list') {
+							const matches = tokens[0].value.match(/^(\t+)\d+\./);
+							if (matches && matches.length) {
+								const indent = matches[1].length;
+								const n = findPrevListNum(editor, row, indent - 1) + 1;
+								editor.session.replace(
+									{
+										start: { row, column: 0 },
+										end: { row, column: tokens[0].value.length },
+									},
+									tokens[0].value.replace(/\d+\./, `${n}.`)
+								);
+							}
+						}
+					}
+
+					editor.blockOutdent();
+				},
+				readonly: false,
 			});
 
 			this.editor_.editor.getSession().isFullWidth = (c) => {
