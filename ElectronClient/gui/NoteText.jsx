@@ -1006,7 +1006,7 @@ class NoteTextComponent extends React.Component {
 			// Returns tokens of the line if it starts with a 'markup.list' token.
 			const listTokens = (editor, row) => {
 				const tokens = editor.session.getTokens(row);
-				if (tokens.length > 0 && tokens[0].type == 'markup.list') {
+				if (tokens.length > 0 && tokens[0].type === 'markup.list') {
 					return tokens;
 				} else {
 					return undefined;
@@ -1047,7 +1047,15 @@ class NoteTextComponent extends React.Component {
 				exec: function(editor) {
 					const range = editor.getSelectionRange();
 					const tokens = listTokens(editor, range.start.row);
-					if (!range.isEmpty() || !tokens || tokens.length > 1) {
+
+					const emptyListItem = tokens && tokens.length === 1;
+					const emptyCheckboxItem =
+						tokens &&
+						tokens.length === 3 &&
+						['[ ]', '[x]'].some(cb => cb === tokens[1].value) &&
+						tokens[2].value === ' ';
+
+					if (!range.isEmpty() || !(emptyListItem || emptyCheckboxItem)) {
 						editor.insert('\n');
 						return;
 					}
