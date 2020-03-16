@@ -1052,11 +1052,12 @@ class NoteTextComponent extends React.Component {
 					const emptyCheckboxItem =
 						tokens &&
 						tokens.length === 3 &&
-						['[ ]', '[x]'].some(cb => cb === tokens[1].value) &&
+						['[ ]', '[x]'].indexOf(tokens[1].value) !== -1 &&
 						tokens[2].value === ' ';
 
 					if (!range.isEmpty() || !(emptyListItem || emptyCheckboxItem)) {
 						editor.insert('\n');
+						editor.renderer.scrollCursorIntoView();
 						return;
 					}
 
