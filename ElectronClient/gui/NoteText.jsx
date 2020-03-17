@@ -1006,11 +1006,10 @@ class NoteTextComponent extends React.Component {
 			// Returns tokens of the line if it starts with a 'markup.list' token.
 			const listTokens = (editor, row) => {
 				const tokens = editor.session.getTokens(row);
-				if (tokens.length > 0 && tokens[0].type === 'markup.list') {
-					return tokens;
-				} else {
-					return undefined;
+				if (!tokens.length || tokens[0].type !== 'markup.list') {
+					return null;
 				}
+				return tokens;
 			};
 
 			// Markdown list indentation. (https://github.com/laurent22/joplin/pull/2713)
@@ -1043,7 +1042,7 @@ class NoteTextComponent extends React.Component {
 			// (https://github.com/laurent22/joplin/pull/2772)
 			this.editor_.editor.commands.addCommand({
 				name: 'enter',
-				bindKey: { win: 'Enter', mac: 'Enter' },
+				bindKey: 'Enter',
 				exec: function(editor) {
 					const range = editor.getSelectionRange();
 					const tokens = listTokens(editor, range.start.row);
