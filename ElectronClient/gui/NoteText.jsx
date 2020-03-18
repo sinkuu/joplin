@@ -1066,7 +1066,7 @@ class NoteTextComponent extends React.Component {
 			this.editor_.editor.commands.addCommand({
 				name: 'enter',
 				bindKey: 'Enter',
-				multiSelectAction: 'forEachLine',
+				multiSelectAction: 'forEach',
 				exec: function(editor) {
 					const range = editor.getSelectionRange();
 					const tokens = listTokens(editor, range.start.row);
