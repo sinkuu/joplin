@@ -1007,7 +1007,7 @@ class NoteTextComponent extends React.Component {
 			const listTokens = (editor, row) => {
 				const tokens = editor.session.getTokens(row);
 				if (!tokens.length || tokens[0].type !== 'markup.list') {
-					return null;
+					return [];
 				}
 				return tokens;
 			};
@@ -1066,13 +1066,13 @@ class NoteTextComponent extends React.Component {
 			this.editor_.editor.commands.addCommand({
 				name: 'enter',
 				bindKey: 'Enter',
+				multiSelectAction: 'forEachLine',
 				exec: function(editor) {
 					const range = editor.getSelectionRange();
 					const tokens = listTokens(editor, range.start.row);
 
-					const emptyListItem = tokens && tokens.length === 1;
+					const emptyListItem = tokens.length === 1;
 					const emptyCheckboxItem =
-						tokens &&
 						tokens.length === 3 &&
 						['[ ]', '[x]'].includes(tokens[1].value) &&
 						tokens[2].value === ' ';
