@@ -1,0 +1,47 @@
+name: build
+
+on:
+  push:
+    branches:
+      - patched
+
+jobs:
+  build_patched_win:
+    runs-on: windows-latest
+    steps:
+    - uses: kolpav/purge-artifacts-action@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        expire-in: 0
+    - uses: actions/checkout@v2
+    - name: Use Node.js 13.x
+      uses: actions/setup-node@v1
+      with:
+        node-version: 13.x
+    - name: Get npm cache directory
+      id: npm-cache
+      run: |
+        echo "::set-output name=dir::$(npm config get cache)"
+    - uses: actions/cache@v1
+      with:
+        path: ${{ steps.npm-cache.outputs.dir }}
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+    - name: npm install
+      run: npm install
+    - name: build application
+      run: ./node_modules/.bin/electron-builder --win nsis
+      working-directory: ./ElectronClient
+    - name: Rename
+      run: Dir | where { -Not $_.PsIscontainer -AND $_.name -match " " } | Rename-Item -NewName { $_.name -replace " ","_" }
+      shell: powershell
+      working-directory: ./ElectronClient/dist
+    - name: ls
+      run: ls
+      working-directory: ./ElectronClient/dist
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: dist-win
+        path: ./ElectronClient/dist/Joplin_Setup_*.exe
