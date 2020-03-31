@@ -14,27 +14,17 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         expire-in: 0
     - uses: actions/checkout@v2
-    - name: Use Node.js 13.x
-      uses: actions/setup-node@v1
+    - name: Cache node_modules
+      uses: actions/cache@preview
       with:
-        node-version: 13.x
-    - name: Get npm cache directory
-      id: npm-cache
-      run: |
-        echo "::set-output name=dir::$(npm config get cache)"
-    - uses: actions/cache@v1
-      with:
-        path: ${{ steps.npm-cache.outputs.dir }}
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
-    - name: npm install
-      run: npm install
-    - name: npm build
-      run: npm run build
-      working-directory: ./ElectronClient
-    - name: build application
-      run: npm run dist
+        path: ~/.cache/yarn
+        key: ${{ runner.os }}-projectname-${{ hashFiles(format('{0}{1}', github.workspace, '/yarn.lock')) }}
+        restore-keys:
+          ${{ runner.os }}-projectname-
+    - name: yarn install
+      run: yarn install
+    - name: yarn dist
+      run: yarn dist
       working-directory: ./ElectronClient
     - name: Rename
       run: Dir | where { -Not $_.PsIscontainer -AND $_.name -match " " } | Rename-Item -NewName { $_.name -replace " ","_" }
