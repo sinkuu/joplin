@@ -30,8 +30,8 @@ jobs:
           ${{ runner.os }}-node-
     - name: npm install
       run: npm install
-    - name: npm install (ElectronClient)
-      run: npm install
+    - name: npm build
+      run: npm run build
       working-directory: ./ElectronClient
     - name: build application
       run: ./node_modules/.bin/electron-builder --win nsis
