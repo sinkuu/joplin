@@ -30,14 +30,11 @@ jobs:
           ${{ runner.os }}-node-
     - name: npm install
       run: npm install
-    - name: npm install (ElectronClient)
-      run: npm install
-      working-directory: ./ElectronClient
     - name: npm build
       run: npm run build
       working-directory: ./ElectronClient
     - name: build application
-      run: ./node_modules/.bin/electron-builder --win nsis
+      run: npm run dist
       working-directory: ./ElectronClient
     - name: Rename
       run: Dir | where { -Not $_.PsIscontainer -AND $_.name -match " " } | Rename-Item -NewName { $_.name -replace " ","_" }
